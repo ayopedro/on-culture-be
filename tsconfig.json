@@ -16,6 +16,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@@/*": ["src/*"],
+      "@@/customers/*": ["src/customers/*"],
+      "@@/products/*": ["src/products/*"],
+      "@@prisma/*": ["node_modules/.prisma/*"]
+    }
   }
 }

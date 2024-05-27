@@ -16,15 +16,16 @@ enum ProductCategory {
 }
 
 model Order {
-  id         String   @id @default(uuid())
-  customerId String   @db.Uuid
-  productId  String   @db.Uuid
-  createdAt  DateTime @default(now()) @db.Timestamptz(6)
-  createdBy  String?  @db.Uuid
-  updatedAt  DateTime @updatedAt() @db.Timestamptz(6)
-  updatedBy  String?  @db.Uuid
-  customer   Customer @relation(fields: [customerId], references: [id])
-  product    Product  @relation(fields: [productId], references: [id])
+  id          String   @id @default(uuid())
+  customerId  String   @db.Uuid
+  productId   String   @db.Uuid
+  orderNumber Int      @unique
+  createdAt   DateTime @default(now()) @db.Timestamptz(6)
+  createdBy   String?  @db.Uuid
+  updatedAt   DateTime @updatedAt() @db.Timestamptz(6)
+  updatedBy   String?  @db.Uuid
+  customer    Customer @relation(fields: [customerId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id])
 
   @@map("orders")
 }
@@ -32,6 +33,7 @@ model Order {
 model Customer {
   id        String   @id @default(uuid())
   name      String   @db.VarChar
+  email     String   @unique @db.VarChar
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   createdBy String?  @db.Uuid
   updatedAt DateTime @updatedAt() @db.Timestamptz(6)
