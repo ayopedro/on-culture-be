@@ -11,22 +11,27 @@ import { PrismaService } from '@@/common/database/prisma/prisma.service';
 export class CustomersService {
   constructor(private prisma: PrismaService) {}
 
-  async createCustomer(dto: CreateCustomerDto) {
+  async createCustomer({ email, name }: CreateCustomerDto) {
     let customer: Customer;
     try {
       const existingCustomer = await this.prisma.customer.findFirst({
-        where: { email: dto.email },
+        where: { email: { equals: email.toLowerCase() } },
       });
-      if (existingCustomer) {
-        customer = await this.prisma.customer.create({ data: dto });
+
+      if (!existingCustomer) {
+        customer = await this.prisma.customer.create({
+          data: {
+            name,
+            email: email.toLowerCase(),
+          },
+        });
       } else {
         customer = existingCustomer;
       }
-
-      return customer;
     } catch (error) {
       throw new InternalServerErrorException('Customer could not be created');
     }
+    return customer;
   }
 
   async getCustomers() {

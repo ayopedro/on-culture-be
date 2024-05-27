@@ -2,6 +2,8 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
+import { ApiResponseMeta } from '@@/common/decorators/response.decorator';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -19,12 +21,13 @@ export class OrdersController {
   }
 
   @Post()
+  @ApiResponseMeta({ message: 'Order created successfully' })
   async createOrder(@Body() dto: CreateOrderDto) {
     return this.orderService.createOrder(dto);
   }
 
   @Post('bulk-upload')
-  async bulkUploadOrders(dto: CreateOrderDto[]) {
+  async bulkUploadOrders(@Body() dto: BulkUploadOrders) {
     return this.orderService.bulkUploadOrders(dto);
   }
 }

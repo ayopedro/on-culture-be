@@ -6,16 +6,13 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { customAlphabet } from 'nanoid';
 
-const CUSTOM_CHARS =
-  '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 @Injectable()
 export class AppUtilities {
-  public static generateShortCode(charLen = 6): string {
-    const nanoid = customAlphabet(CUSTOM_CHARS, charLen);
+  public static generateProductCode(product_name: string): string {
+    const product_code = product_name.toLowerCase().replace(/\s/g, '_');
 
-    return nanoid();
+    return product_code;
   }
 
   public static handleException(error: any): Error {

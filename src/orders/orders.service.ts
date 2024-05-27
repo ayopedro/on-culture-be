@@ -1,9 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CustomersService } from '@@/customers/customers.service';
 import { ProductsService } from '@@/products/products.service';
 import moment from 'moment';
 import { PrismaService } from '@@/common/database/prisma/prisma.service';
+import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
 
 @Injectable()
 export class OrdersService {
@@ -15,8 +20,8 @@ export class OrdersService {
 
   async getSummary() {
     const [totalRevenue, totalOrders, uniqueCustomers] = await Promise.all([
-      this.getOrdersCount(),
       this.productService.getAllProductsSum(),
+      this.getOrdersCount(),
       this.customerService.getCustomersCount(),
     ]);
 
@@ -35,7 +40,11 @@ export class OrdersService {
   }
 
   async getOrdersCount() {
-    return await this.prisma.order.count();
+    const agg = await this.prisma.order.aggregate({
+      _count: true,
+    });
+
+    return agg._count;
   }
 
   async getOrder(id: string) {
@@ -64,19 +73,25 @@ export class OrdersService {
         price: dto.price,
       });
 
-      await prisma.order.create({
-        data: {
-          orderNumber: dto.order_number,
-          customer: { connect: { id: customer.id } },
-          product: { connect: { id: product.id } },
-          ...(dto.order_date && { createdAt: moment(dto.order_date).format() }),
-          createdBy: customer.id,
-        },
-      });
+      try {
+        return await prisma.order.create({
+          data: {
+            orderNumber: dto.order_number,
+            customer: { connect: { id: customer.id } },
+            product: { connect: { id: product.id } },
+            ...(dto.order_date && {
+              createdAt: moment(dto.order_date).format(),
+            }),
+            createdBy: customer.id,
+          },
+        });
+      } catch (error) {
+        throw new ConflictException('Order number already exists');
+      }
     });
   }
 
-  async bulkUploadOrders(orders: CreateOrderDto[]) {
+  async bulkUploadOrders({ orders }: BulkUploadOrders) {
     return await this.prisma.$transaction(async () => {
       for (const order of orders) {
         await this.createOrder(order);
