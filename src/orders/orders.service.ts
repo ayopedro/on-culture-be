@@ -1,12 +1,11 @@
 import {
-  ConflictException,
+  BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CustomersService } from '@@/customers/customers.service';
 import { ProductsService } from '@@/products/products.service';
-import moment from 'moment';
 import { PrismaService } from '@@/common/database/prisma/prisma.service';
 import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
 
@@ -74,19 +73,19 @@ export class OrdersService {
       });
 
       try {
-        return await prisma.order.create({
+        await prisma.order.create({
           data: {
             orderNumber: dto.order_number,
             customer: { connect: { id: customer.id } },
             product: { connect: { id: product.id } },
             ...(dto.order_date && {
-              createdAt: moment(dto.order_date).format(),
+              createdAt: new Date(dto.order_date),
             }),
             createdBy: customer.id,
           },
         });
       } catch (error) {
-        throw new ConflictException('Order number already exists');
+        throw new BadRequestException(error.message);
       }
     });
   }

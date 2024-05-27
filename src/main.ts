@@ -8,12 +8,21 @@ import {
 } from '@nestjs/common';
 import * as bodyParser from 'body-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ErrorsInterceptor } from './common/interceptors/error.interceptor';
+import { RequestInterceptor } from './common/interceptors/request.interceptor';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
 
   const port = configService.get('app.port');
+
+  app.useGlobalInterceptors(
+    new RequestInterceptor(),
+    new ResponseInterceptor(),
+    new ErrorsInterceptor(),
+  );
 
   app.enableShutdownHooks();
   app.useGlobalPipes(
