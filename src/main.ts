@@ -40,6 +40,7 @@ async function bootstrap() {
   const swaggerConfig = new DocumentBuilder()
     .setTitle('On-Culture App')
     .setDescription('The On-Culture API to manage the app')
+    .setVersion('1.0')
     .build();
 
   const document = SwaggerModule.createDocument(app, swaggerConfig);
