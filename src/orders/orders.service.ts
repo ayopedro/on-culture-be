@@ -76,10 +76,10 @@ export class OrdersService {
     });
   }
 
-  async bulkCreateOrders(dtoList: CreateOrderDto[]) {
+  async bulkUploadOrders(orders: CreateOrderDto[]) {
     return await this.prisma.$transaction(async () => {
-      for (const dto of dtoList) {
-        await this.createOrder(dto);
+      for (const order of orders) {
+        await this.createOrder(order);
       }
     });
   }
