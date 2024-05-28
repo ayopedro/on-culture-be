@@ -16,7 +16,7 @@ import { DateFilterDto, Period } from './dto/date-filter.dto';
 import { AppUtilities } from '@@/common/utilities';
 import { DateRangeMap } from '@@/common/constant';
 import { isEmail, isEnum, isNotEmpty, isNumber } from 'class-validator';
-import { ProductCategory } from '@@/common/interfaces';
+import { PreviousDataDate, ProductCategory } from '@@/common/interfaces';
 import { OrderUploadReasons } from './interface';
 
 @Injectable()
@@ -48,8 +48,13 @@ export class OrdersService extends CrudService<
         }
       : {};
 
+    const previous: PreviousDataDate = {
+      startDate: duration.previousStart,
+      endDate: duration.previousEnd,
+    };
+
     const [totalRevenue, totalOrders, uniqueCustomers] = await Promise.all([
-      this.getOrdersRevenue(whereClause),
+      this.getOrdersRevenue(whereClause, previous),
       this.getOrdersCount(whereClause),
       this.customerService.getCustomersCount(duration),
     ]);
@@ -117,18 +122,51 @@ export class OrdersService extends CrudService<
     return (agg as { _count: number })._count;
   }
 
-  async getOrdersRevenue(where: Record<any, any>) {
-    let orders = await this.findMany({
+  async getOrdersRevenue(where: Record<any, any>, previous: PreviousDataDate) {
+    let currentOrders = await this.findMany({
       where,
       select: { product: { select: { price: true } } },
     });
 
-    orders = orders.map((order) => order.product);
+    let previousOrders = await this.findMany({
+      where: {
+        AND: [
+          {
+            date: { gte: previous.startDate },
+          },
+          {
+            date: { lte: previous.endDate },
+          },
+        ],
+      },
+      select: { product: { select: { price: true } } },
+    });
 
-    return orders.reduce((acc, item) => {
-      acc += item.price;
-      return acc;
-    }, 0);
+    currentOrders = currentOrders.map((order) => order.product);
+    previousOrders = previousOrders.map((order) => order.product);
+
+    const currentOrdersCount = currentOrders.reduce(
+      (acc, item) => (acc += item.price),
+      0,
+    );
+
+    const previousOrdersCount = previousOrders.reduce(
+      (acc, item) => (acc += item.price),
+      0,
+    );
+
+    let difference = 0;
+
+    if (previousOrdersCount !== 0) {
+      difference =
+        ((currentOrdersCount - previousOrdersCount) / previousOrdersCount) *
+        100;
+    }
+
+    return {
+      current: currentOrdersCount,
+      difference,
+    };
   }
 
   async getOrder(id: string) {
@@ -185,11 +223,13 @@ export class OrdersService extends CrudService<
   }
 
   async getDateRange(period: Period) {
-    const range =
-      period !== Period.ALL && AppUtilities.generateDateRange(period);
+    const range = AppUtilities.generateDateRange(period);
+
     return {
       startDate: range[DateRangeMap[period]?.startDate],
       endDate: range[DateRangeMap[period]?.endDate],
+      previousStart: range[DateRangeMap[period]?.previousStart],
+      previousEnd: range[DateRangeMap[period]?.previousEnd],
     };
   }
 

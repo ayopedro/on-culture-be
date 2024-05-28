@@ -18,6 +18,11 @@ export enum ProductCategory {
   SCIFI = 'SciFi',
 }
 
+export interface PreviousDataDate {
+  startDate: string;
+  endDate: string;
+}
+
 export interface CrudMapType {
   aggregate: unknown;
   count: unknown;

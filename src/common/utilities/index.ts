@@ -27,23 +27,63 @@ export class AppUtilities {
   }
 
   public static generateDateRange(period: Period) {
-    if (period !== Period.ALL) {
-      const duration = moment.duration(period);
-      const previousDuration = moment().subtract(duration);
+    const duration = moment.duration(period).asMonths();
+    const previousDuration = moment().subtract(duration);
 
-      const result = {
-        currentMonthStart: moment().startOf('month').toISOString(),
-        currentMonthEnd: moment().endOf('month').toISOString(),
-        currentYearStart: moment().startOf('year').toISOString(),
-        currentYearEnd: moment().endOf('year').toISOString(),
-        previousMonthStart: previousDuration.startOf('month').toISOString(),
-        previousMonthEnd: previousDuration.endOf('month').toISOString(),
-        previousYearStart: previousDuration.startOf('year').toISOString(),
-        previousYearEnd: previousDuration.endOf('year').toISOString(),
+    const monthStart = previousDuration.startOf('month').toISOString();
+    const monthEnd = previousDuration.endOf('month').toISOString();
+    const yearStart = previousDuration.startOf('year').toISOString();
+    const yearEnd = previousDuration.endOf('year').toISOString();
+
+    let result;
+
+    if (period === Period.THIS_YEAR || period === Period.THIS_MONTH) {
+      result = {
+        monthStart: moment().startOf('month').toISOString(),
+        monthEnd: moment().endOf('month').toISOString(),
+        yearStart: moment().startOf('year').toISOString(),
+        yearEnd: moment().endOf('year').toISOString(),
+        previousMonthStart: moment()
+          .subtract(1, 'month')
+          .startOf('month')
+          .toISOString(),
+        previousMonthEnd: moment()
+          .subtract(1, 'month')
+          .endOf('month')
+          .toISOString(),
+        previousYearStart: moment()
+          .subtract(1, 'year')
+          .startOf('year')
+          .toISOString(),
+        previousYearEnd: moment()
+          .subtract(1, 'year')
+          .endOf('year')
+          .toISOString(),
       };
-
-      return result;
+    } else {
+      result = {
+        monthStart,
+        monthEnd,
+        yearStart,
+        yearEnd,
+        previousMonthStart: moment(monthStart)
+          .subtract(Number(duration), 'months')
+          .toISOString(),
+        previousMonthEnd: moment(monthEnd)
+          .endOf('month')
+          .subtract(Number(duration), 'months')
+          .toISOString(),
+        previousYearStart: moment(yearStart)
+          .subtract(Number(duration), 'months')
+          .toISOString(),
+        previousYearEnd: previousDuration
+          .endOf('year')
+          .subtract(Number(duration), 'months')
+          .toISOString(),
+      };
     }
+
+    return result;
   }
 
   public static handleException(error: any): Error {

@@ -4,27 +4,39 @@ export const SensitiveUserInfo = ['password'];
 
 export const DateRangeMap = {
   [Period.THIS_YEAR]: {
-    startDate: 'currentYearStart',
-    endDate: 'currentYearEnd',
+    startDate: 'yearStart',
+    endDate: 'yearEnd',
+    previousStart: 'previousYearStart',
+    previousEnd: 'previousYearEnd',
   },
   [Period.THIS_MONTH]: {
-    startDate: 'currentMonthStart',
-    endDate: 'currentMonthEnd',
+    startDate: 'monthStart',
+    endDate: 'monthEnd',
+    previousStart: 'previousMonthStart',
+    previousEnd: 'previousMonthEnd',
   },
   [Period.LAST_MONTH]: {
-    startDate: 'previousMonthStart',
-    endDate: 'previousMonthEnd',
+    startDate: 'monthStart',
+    endDate: 'monthEnd',
+    previousStart: 'previousMonthStart',
+    previousEnd: 'previousMonthEnd',
   },
   [Period.LAST_YEAR]: {
-    startDate: 'previousYearStart',
-    endDate: 'previousYearEnd',
+    startDate: 'yearStart',
+    endDate: 'yearEnd',
+    previousStart: 'previousYearStart',
+    previousEnd: 'previousYearEnd',
   },
   [Period.TWO_YEARS]: {
-    startDate: 'previousYearStart',
-    endDate: 'previousYearEnd',
+    startDate: 'yearStart',
+    endDate: 'yearEnd',
+    previousStart: 'previousYearStart',
+    previousEnd: 'previousYearEnd',
   },
   [Period.THREE_YEARS]: {
-    startDate: 'previousYearStart',
-    endDate: 'previousYearEnd',
+    startDate: 'yearStart',
+    endDate: 'yearEnd',
+    previousStart: 'previousYearStart',
+    previousEnd: 'previousYearEnd',
   },
 };
