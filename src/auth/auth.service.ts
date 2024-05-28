@@ -2,6 +2,7 @@ import { PrismaService } from '@@/common/database/prisma/prisma.service';
 import {
   ForbiddenException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -9,6 +10,8 @@ import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as argon from 'argon2';
 import { SigninUserDto } from './dto/sign-in-user.dto';
+import { User } from '@prisma/client';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -49,7 +52,7 @@ export class AuthService {
     });
 
     if (!user)
-      throw new ForbiddenException('Invalid credentials. User not found');
+      throw new NotFoundException('Invalid credentials. User not found');
 
     const matchedPW = await argon.verify(user.password, password);
 
@@ -61,6 +64,28 @@ export class AuthService {
     const accessToken = await this.generateAccessToken(user.id, user.email);
 
     return { user, accessToken };
+  }
+
+  async changePassword(
+    { currentPassword, newPassword }: ChangePasswordDto,
+    { email }: User,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    const matchedPW = await argon.verify(user.password, currentPassword);
+
+    if (!matchedPW)
+      throw new ForbiddenException('Current Password is Incorrect');
+
+    const hash = await argon.hash(newPassword);
+
+    await this.prisma.user.update({
+      where: { email },
+      data: { password: hash },
+    });
+
+    delete user.password;
+    return { message: 'Password changed successfully!', user };
   }
 
   async generateAccessToken(userId: string, email: string): Promise<string> {

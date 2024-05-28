@@ -7,18 +7,19 @@ import { ApiResponseMeta } from '@@/common/decorators/response.decorator';
 import { JwtGuard } from '@@/common/guard/auth.guard';
 
 @ApiTags('Orders')
-@ApiBearerAuth()
 @Controller('orders')
 export class OrdersController {
   constructor(private orderService: OrdersService) {}
 
   @Get()
+  @ApiBearerAuth()
   @UseGuards(JwtGuard)
   async getAllOrders() {
     return this.orderService.getOrders();
   }
 
   @Get('summary')
+  @ApiBearerAuth()
   @UseGuards(JwtGuard)
   async getSummary() {
     return this.orderService.getSummary();
@@ -31,6 +32,7 @@ export class OrdersController {
   }
 
   @Post('bulk-upload')
+  @ApiBearerAuth()
   @UseGuards(JwtGuard)
   async bulkUploadOrders(@Body() dto: BulkUploadOrders) {
     return this.orderService.bulkUploadOrders(dto);
