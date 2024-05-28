@@ -186,8 +186,6 @@ export abstract class CrudService<D extends Delegate, T extends CrudMapType> {
       orderBy: mOrderBy = args?.orderBy || 'createdAt',
       direction = 'desc',
       isPaginated = 'true',
-      paginationType,
-      page = 1,
     } = params;
 
     const orderBy =
@@ -195,51 +193,6 @@ export abstract class CrudService<D extends Delegate, T extends CrudMapType> {
 
     if (isPaginated.toString().toLowerCase() === 'false') {
       return this.findMany({ ...args, orderBy });
-    }
-
-    if (paginationType === 'page') {
-      const paginateData = {} as { skip?: number; take?: number };
-      const take = size ? parseInt(size) : 25;
-      paginateData.skip = (parseInt(page) - 1) * take;
-      paginateData.take = take;
-      const orderByCol = typeof mOrderBy === 'string' ? mOrderBy : undefined;
-
-      let results = await this.findMany({
-        ...args,
-        ...paginateData,
-        orderBy: {
-          [orderByCol || 'createdAt']: direction ? direction : 'desc',
-        },
-      });
-      const count = await this.count({
-        where: args.where,
-      });
-
-      if (dataMapper && Array.isArray(results)) {
-        let $__cachedData = {};
-        results = await Promise.all(
-          results.map(async (result) => {
-            const { $__cachedData: sharedCachedData, ...mResult } =
-              await dataMapper(result, results, $__cachedData);
-            if (sharedCachedData) {
-              $__cachedData = sharedCachedData;
-            }
-
-            return mResult;
-          }),
-        );
-      }
-
-      return {
-        pageItems: results,
-        pageMeta: {
-          itemCount: results.length,
-          totalItems: count,
-          itemsPerPage: take,
-          totalPages: Math.ceil(count / take),
-          currentPage: page,
-        },
-      };
     }
 
     const totalCount = await this.delegate.count({ where: args.where });

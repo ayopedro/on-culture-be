@@ -5,6 +5,11 @@ export enum ResponseMessage {
   FAILED = 'Request Failed',
 }
 
+export enum SortDirection {
+  ASC = 'asc',
+  DESC = 'desc',
+}
+
 export enum ProductCategory {
   DRAMA = 'Drama',
   COMEDY = 'Comedy',
