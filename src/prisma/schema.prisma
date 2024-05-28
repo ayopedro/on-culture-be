@@ -28,17 +28,19 @@ model User {
 }
 
 model Order {
-  id          String   @id @default(uuid()) @db.Uuid
-  customerId  String   @db.Uuid
-  productId   String   @db.Uuid
-  orderNumber Int      @unique
-  createdAt   DateTime @default(now()) @db.Timestamptz(6)
-  createdBy   String?  @db.Uuid
-  updatedAt   DateTime @updatedAt() @db.Timestamptz(6)
-  updatedBy   String?  @db.Uuid
-  customer    Customer @relation(fields: [customerId], references: [id])
-  product     Product  @relation(fields: [productId], references: [id])
+  id         String    @id @default(uuid()) @db.Uuid
+  customerId String    @db.Uuid
+  productId  String    @db.Uuid
+  number     Int       @unique @default(autoincrement())
+  date       DateTime? @default(now()) @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @db.Timestamptz(6)
+  createdBy  String?   @db.Uuid
+  updatedAt  DateTime  @updatedAt() @db.Timestamptz(6)
+  updatedBy  String?   @db.Uuid
+  customer   Customer  @relation(fields: [customerId], references: [id])
+  product    Product   @relation(fields: [productId], references: [id])
 
+  @@unique([customerId, productId, date])
   @@map("orders")
 }
 
@@ -56,16 +58,16 @@ model Customer {
 }
 
 model Product {
-  id           String          @id @default(uuid()) @db.Uuid
-  name         String          @db.VarChar
-  product_code String          @unique @db.VarChar
-  category     ProductCategory
-  price        Int             @db.SmallInt
-  createdAt    DateTime        @default(now()) @db.Timestamptz(6)
-  createdBy    String?         @db.Uuid
-  updatedAt    DateTime        @updatedAt() @db.Timestamptz(6)
-  updatedBy    String?         @db.Uuid
-  orders       Order[]
+  id        String          @id @default(uuid()) @db.Uuid
+  name      String          @db.VarChar
+  code      String          @unique @db.VarChar
+  category  ProductCategory
+  price     Int             @db.SmallInt
+  createdAt DateTime        @default(now()) @db.Timestamptz(6)
+  createdBy String?         @db.Uuid
+  updatedAt DateTime        @updatedAt() @db.Timestamptz(6)
+  updatedBy String?         @db.Uuid
+  orders    Order[]
 
   @@map("products")
 }
