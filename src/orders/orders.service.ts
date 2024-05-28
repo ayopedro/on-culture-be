@@ -7,7 +7,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { CustomersService } from '@@/customers/customers.service';
 import { ProductsService } from '@@/products/products.service';
 import { PrismaService } from '@@/common/database/prisma/prisma.service';
-import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
+import { BulkUploadOrdersDto } from './dto/bulk-upload-order.dto';
 import { CrudService } from '@@/common/database/crud.service';
 import { OrderMaptype } from './orders.maptype';
 import { Prisma } from '@prisma/client';
@@ -15,6 +15,9 @@ import { GetOrdersFilterDto } from './dto/get-orders.dto';
 import { DateFilterDto, Period } from './dto/date-filter.dto';
 import { AppUtilities } from '@@/common/utilities';
 import { DateRangeMap } from '@@/common/constant';
+import { isEmail, isEnum, isNotEmpty, isNumber } from 'class-validator';
+import { ProductCategory } from '@@/common/interfaces';
+import { OrderUploadReasons } from './interface';
 
 @Injectable()
 export class OrdersService extends CrudService<
@@ -145,7 +148,7 @@ export class OrdersService extends CrudService<
     return await this.prisma.$transaction(async (prisma: PrismaService) => {
       const customer = await this.customerService.createCustomer({
         name: dto.customer_name,
-        email: dto.customer_email,
+        email: dto.email,
       });
 
       const product = await this.productService.createProduct({
@@ -154,13 +157,15 @@ export class OrdersService extends CrudService<
         price: dto.price,
       });
 
+      const order_date = AppUtilities.parseDate(dto.order_date);
+
       try {
         await prisma.order.create({
           data: {
             customer: { connect: { id: customer.id } },
             product: { connect: { id: product.id } },
             ...(dto.order_date && {
-              date: dto.order_date,
+              date: order_date,
             }),
             createdBy: customer.id,
           },
@@ -171,7 +176,7 @@ export class OrdersService extends CrudService<
     });
   }
 
-  async bulkUploadOrders({ orders }: BulkUploadOrders) {
+  async bulkUploadOrders({ orders }: BulkUploadOrdersDto) {
     return await this.prisma.$transaction(async () => {
       for (const order of orders) {
         await this.createOrder(order);
@@ -186,5 +191,74 @@ export class OrdersService extends CrudService<
       startDate: range[DateRangeMap[period]?.startDate],
       endDate: range[DateRangeMap[period]?.endDate],
     };
+  }
+
+  async validateBulkUploadOrder(bulkOrdersDto: BulkUploadOrdersDto) {
+    const { invalidData, validData } =
+      await this.validateBulkOrdersData(bulkOrdersDto);
+    const validDto: BulkUploadOrdersDto = {
+      orders: validData,
+    };
+
+    return {
+      validRecordCount: validData.length,
+      invalidRecordCount: invalidData.length,
+      invalidRecords: invalidData,
+      validRecords: validDto,
+    };
+  }
+
+  private async validateBulkOrdersData(bulkOrdersDto: BulkUploadOrdersDto) {
+    const validData = [];
+    const invalidData = [];
+
+    for (const order of bulkOrdersDto.orders) {
+      if (!isNotEmpty(order.customer_name)) {
+        order['reason'] = order['reason']
+          ? [order['reason'], OrderUploadReasons.CUSTOMER_NAME_REASON].join(
+              ', ',
+            )
+          : OrderUploadReasons.CUSTOMER_NAME_REASON;
+      }
+      if (!isNotEmpty(order.order_date)) {
+        order['reason'] = order['reason']
+          ? [order['reason'], OrderUploadReasons.ORDER_DATE_REASON].join(', ')
+          : OrderUploadReasons.ORDER_DATE_REASON;
+      }
+      if (!isEnum(order.product_category, ProductCategory)) {
+        order['reason'] = order['reason']
+          ? [order['reason'], OrderUploadReasons.PRODUCT_CATEGORY_REASON].join(
+              ', ',
+            )
+          : OrderUploadReasons.PRODUCT_CATEGORY_REASON;
+      }
+      if (order.email && !isEmail(order.email)) {
+        order['reason'] = order['reason']
+          ? [order['reason'], OrderUploadReasons.CUSTOMER_EMAIL_REASON].join(
+              ', ',
+            )
+          : OrderUploadReasons.CUSTOMER_EMAIL_REASON;
+      }
+      if (!isNumber(order.price)) {
+        order['reason'] = order['reason']
+          ? [order['reason'], OrderUploadReasons.PRICE_REASON].join(', ')
+          : OrderUploadReasons.PRICE_REASON;
+      }
+      if (!isNotEmpty(order.product_name)) {
+        order['reason'] = order['reason']
+          ? [order['reason'], OrderUploadReasons.PRODUCT_NAME_REASON].join(', ')
+          : OrderUploadReasons.PRODUCT_NAME_REASON;
+      }
+
+      if (order['reason']) {
+        invalidData.push(order);
+      }
+
+      if (!order['reason']) {
+        validData.push(order);
+      }
+    }
+
+    return { invalidData, validData };
   }
 }

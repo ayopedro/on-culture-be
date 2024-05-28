@@ -7,6 +7,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
+import { matches } from 'class-validator';
 import * as moment from 'moment';
 
 @Injectable()
@@ -15,6 +16,14 @@ export class AppUtilities {
     const product_code = product_name.toLowerCase().replace(/\s/g, '_');
 
     return product_code;
+  }
+
+  public static parseDate(date: string) {
+    const dayFirstMatch = matches(
+      date,
+      /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+    );
+    return !dayFirstMatch ? date : moment(date, 'DD/MM/YYYY').toDate();
   }
 
   public static generateDateRange(period: Period) {

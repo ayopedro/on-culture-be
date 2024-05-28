@@ -2,16 +2,20 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
+import { BulkUploadOrdersDto } from './dto/bulk-upload-order.dto';
 import { ApiResponseMeta } from '@@/common/decorators/response.decorator';
 import { JwtGuard } from '@@/common/guard/auth.guard';
 import { GetOrdersFilterDto } from './dto/get-orders.dto';
 import { DateFilterDto } from './dto/date-filter.dto';
+import { OrderQueueProducer } from './queue/producer';
 
 @ApiTags('Orders')
 @Controller('orders')
 export class OrdersController {
-  constructor(private orderService: OrdersService) {}
+  constructor(
+    private orderService: OrdersService,
+    private orderQueueProducer: OrderQueueProducer,
+  ) {}
 
   @Get()
   @ApiBearerAuth()
@@ -36,7 +40,13 @@ export class OrdersController {
   @Post('bulk-upload')
   @ApiBearerAuth()
   @UseGuards(JwtGuard)
-  async bulkUploadOrders(@Body() dto: BulkUploadOrders) {
-    return this.orderService.bulkUploadOrders(dto);
+  async bulkUploadOrders(@Body() dto: BulkUploadOrdersDto) {
+    return this.orderQueueProducer.queueBulkOrders({ orders: dto });
+  }
+
+  @ApiResponseMeta({ message: 'Request successful!', statusCode: 200 })
+  @Post('/validate-bulk-upload')
+  async bulkUploadValidation(@Body() bulkUploadDto: BulkUploadOrdersDto) {
+    return this.orderService.validateBulkUploadOrder(bulkUploadDto);
   }
 }
