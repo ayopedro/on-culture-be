@@ -8,6 +8,7 @@ import { JwtGuard } from '@@/common/guard/auth.guard';
 import { User } from '@prisma/client';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { GetRequestUser } from '@@/common/decorators/get-user.decorator';
+import { ResetDto } from './dto/reset-password.dto';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -29,10 +30,17 @@ export class AuthController {
   @Patch('change-password')
   @UseGuards(JwtGuard)
   @ApiBearerAuth()
+  @ApiResponseMeta({ message: 'Password successfully changed' })
   changePassword(
     @Body() body: ChangePasswordDto,
     @GetRequestUser() user: User,
   ) {
     return this.authService.changePassword(body, user);
+  }
+
+  @Patch('reset-password')
+  @ApiResponseMeta({ message: 'Password successfully reset' })
+  resetPassword(@Body() body: ResetDto) {
+    return this.authService.resetPassword(body);
   }
 }

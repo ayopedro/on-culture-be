@@ -2,6 +2,7 @@ import { PrismaService } from '@@/common/database/prisma/prisma.service';
 import {
   ForbiddenException,
   Injectable,
+  NotAcceptableException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import * as argon from 'argon2';
 import { SigninUserDto } from './dto/sign-in-user.dto';
 import { User } from '@prisma/client';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { ResetDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -86,6 +88,27 @@ export class AuthService {
 
     delete user.password;
     return { message: 'Password changed successfully!', user };
+  }
+
+  async resetPassword({ email, token, newPassword }: ResetDto) {
+    const user = await this.prisma.user.findFirst({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException(' User not found');
+    }
+
+    if (token === '12345abc') {
+      const hash = await argon.hash(newPassword);
+
+      await this.prisma.user.update({
+        where: { email: user.email },
+        data: { password: hash },
+      });
+    } else {
+      throw new NotAcceptableException('Invalid token provided');
+    }
   }
 
   async generateAccessToken(userId: string, email: string): Promise<string> {
