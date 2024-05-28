@@ -15,6 +15,18 @@ enum ProductCategory {
   SciFi
 }
 
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  firstName String?
+  lastName  String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
 model Order {
   id          String   @id @default(uuid()) @db.Uuid
   customerId  String   @db.Uuid
