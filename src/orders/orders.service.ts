@@ -8,14 +8,22 @@ import { CustomersService } from '@@/customers/customers.service';
 import { ProductsService } from '@@/products/products.service';
 import { PrismaService } from '@@/common/database/prisma/prisma.service';
 import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
+import { CrudService } from '@@/common/database/crud.service';
+import { OrderMaptype } from './orders.maptype';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
-export class OrdersService {
+export class OrdersService extends CrudService<
+  Prisma.OrderDelegate,
+  OrderMaptype
+> {
   constructor(
     private prisma: PrismaService,
     private customerService: CustomersService,
     private productService: ProductsService,
-  ) {}
+  ) {
+    super(prisma.order);
+  }
 
   async getSummary() {
     const [totalRevenue, totalOrders, uniqueCustomers] = await Promise.all([
@@ -32,22 +40,23 @@ export class OrdersService {
   }
 
   async getOrders() {
-    return await this.prisma.order.findMany({
+    return await this.findManyPaginate({
       where: {},
       include: { customer: true, product: true },
     });
   }
 
   async getOrdersCount() {
-    const agg = await this.prisma.order.aggregate({
+    const agg = await this.aggregate({
+      where: {},
       _count: true,
     });
 
-    return agg._count;
+    return (agg as { _count: number })._count;
   }
 
   async getOrder(id: string) {
-    const order = await this.prisma.order.findFirst({
+    const order = await this.findFirst({
       where: { id },
       include: { customer: true, product: true },
     });

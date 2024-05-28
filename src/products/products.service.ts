@@ -2,23 +2,30 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { PrismaService } from '@@/common/database/prisma/prisma.service';
 import { AppUtilities } from '@@/common/utilities';
-import { Product } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { CrudService } from '@@/common/database/crud.service';
+import { ProductMaptype } from './products.maptype';
 
 @Injectable()
-export class ProductsService {
-  constructor(private prisma: PrismaService) {}
+export class ProductsService extends CrudService<
+  Prisma.ProductDelegate,
+  ProductMaptype
+> {
+  constructor(private prisma: PrismaService) {
+    super(prisma.product);
+  }
 
   async createProduct(dto: CreateProductDto) {
-    let product: Product;
+    let product;
     const product_code = AppUtilities.generateProductCode(dto.name);
 
     try {
-      const existingProduct = await this.prisma.product.findFirst({
+      const existingProduct = await this.findFirst({
         where: { product_code },
       });
 
       if (!existingProduct) {
-        product = await this.prisma.product.create({
+        product = await this.create({
           data: { product_code, ...dto },
         });
       } else {
@@ -31,14 +38,10 @@ export class ProductsService {
     return product;
   }
 
-  async getProducts() {
-    return await this.prisma.product.findMany({});
-  }
-
   async getAllProductsSum() {
-    const agg = await this.prisma.product.aggregate({
+    const agg = (await this.aggregate({
       _sum: { price: true },
-    });
+    })) as { _sum: { price: number } };
 
     return agg._sum.price || 0;
   }
