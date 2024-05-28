@@ -45,9 +45,18 @@ export class CustomersService extends CrudService<
     return await this.findManyPaginate({});
   }
 
-  async getCustomersCount(where: Record<any, any>) {
+  async getCustomersCount(duration: Record<any, any>) {
     return await this.count({
-      where,
+      where: {
+        orders: {
+          some: {
+            AND: [
+              { date: { gte: duration?.startDate } },
+              { date: { lte: duration?.endDate } },
+            ],
+          },
+        },
+      },
     });
   }
 

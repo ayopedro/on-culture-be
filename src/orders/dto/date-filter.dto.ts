@@ -16,5 +16,5 @@ export class DateFilterDto extends PaginationSearchOptionsDto {
   @IsEnum(Period)
   @IsOptional()
   @ApiPropertyOptional()
-  period?: Period;
+  period?: Period = Period.ALL;
 }

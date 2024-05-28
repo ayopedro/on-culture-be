@@ -36,10 +36,10 @@ export class OrdersService extends CrudService<
       ? {
           AND: [
             {
-              createdAt: { gte: duration.startDate },
+              date: { gte: duration.startDate },
             },
             {
-              createdAt: { lte: duration.endDate },
+              date: { lte: duration.endDate },
             },
           ],
         }
@@ -48,7 +48,7 @@ export class OrdersService extends CrudService<
     const [totalRevenue, totalOrders, uniqueCustomers] = await Promise.all([
       this.getOrdersRevenue(whereClause),
       this.getOrdersCount(whereClause),
-      this.customerService.getCustomersCount(whereClause),
+      this.customerService.getCustomersCount(duration),
     ]);
 
     return {
@@ -59,6 +59,21 @@ export class OrdersService extends CrudService<
   }
 
   async getOrders(dto: GetOrdersFilterDto) {
+    const duration = await this.getDateRange(dto.period);
+
+    const whereClause = Object.keys(duration || {}).length
+      ? {
+          AND: [
+            {
+              date: { gte: duration.startDate },
+            },
+            {
+              date: { lte: duration.endDate },
+            },
+          ],
+        }
+      : {};
+
     const parseSplittedTermsQuery = (term: string) => {
       return {
         OR: [
@@ -85,7 +100,7 @@ export class OrdersService extends CrudService<
     ]);
 
     return await this.findManyPaginate({
-      where: parsedQueryFilters,
+      where: { ...whereClause, ...parsedQueryFilters },
       include: { customer: true, product: true },
     });
   }
@@ -165,10 +180,11 @@ export class OrdersService extends CrudService<
   }
 
   async getDateRange(period: Period) {
-    const range = AppUtilities.generateDateRange(period);
+    const range =
+      period !== Period.ALL && AppUtilities.generateDateRange(period);
     return {
-      startDate: range[DateRangeMap[period].startDate],
-      endDate: range[DateRangeMap[period].endDate],
+      startDate: range[DateRangeMap[period]?.startDate],
+      endDate: range[DateRangeMap[period]?.endDate],
     };
   }
 }
