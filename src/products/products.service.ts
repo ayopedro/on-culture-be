@@ -40,6 +40,6 @@ export class ProductsService {
       _sum: { price: true },
     });
 
-    return agg._sum.price;
+    return agg._sum.price || 0;
   }
 }
