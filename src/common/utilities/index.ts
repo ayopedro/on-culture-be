@@ -1,3 +1,4 @@
+import { Period } from '@@/orders/dto/date-filter.dto';
 import {
   NotFoundException,
   BadRequestException,
@@ -6,6 +7,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
+import * as moment from 'moment';
 
 @Injectable()
 export class AppUtilities {
@@ -13,6 +15,26 @@ export class AppUtilities {
     const product_code = product_name.toLowerCase().replace(/\s/g, '_');
 
     return product_code;
+  }
+
+  public static generateDateRange(period: Period) {
+    if (period !== Period.ALL) {
+      const duration = moment.duration(period);
+      const previousDuration = moment().subtract(duration);
+
+      const result = {
+        currentMonthStart: moment().startOf('month').toISOString(),
+        currentMonthEnd: moment().endOf('month').toISOString(),
+        currentYearStart: moment().startOf('year').toISOString(),
+        currentYearEnd: moment().endOf('year').toISOString(),
+        previousMonthStart: previousDuration.startOf('month').toISOString(),
+        previousMonthEnd: previousDuration.endOf('month').toISOString(),
+        previousYearStart: previousDuration.startOf('year').toISOString(),
+        previousYearEnd: previousDuration.endOf('year').toISOString(),
+      };
+
+      return result;
+    }
   }
 
   public static handleException(error: any): Error {

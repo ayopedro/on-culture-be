@@ -12,6 +12,9 @@ import { CrudService } from '@@/common/database/crud.service';
 import { OrderMaptype } from './orders.maptype';
 import { Prisma } from '@prisma/client';
 import { GetOrdersFilterDto } from './dto/get-orders.dto';
+import { DateFilterDto, Period } from './dto/date-filter.dto';
+import { AppUtilities } from '@@/common/utilities';
+import { DateRangeMap } from '@@/common/constant';
 
 @Injectable()
 export class OrdersService extends CrudService<
@@ -26,11 +29,26 @@ export class OrdersService extends CrudService<
     super(prisma.order);
   }
 
-  async getSummary() {
+  async getSummary(dto: DateFilterDto) {
+    const duration = await this.getDateRange(dto.period);
+
+    const whereClause = Object.keys(duration || {}).length
+      ? {
+          AND: [
+            {
+              createdAt: { gte: duration.startDate },
+            },
+            {
+              createdAt: { lte: duration.endDate },
+            },
+          ],
+        }
+      : {};
+
     const [totalRevenue, totalOrders, uniqueCustomers] = await Promise.all([
-      this.getOrdersRevenue(),
-      this.getOrdersCount(),
-      this.customerService.getCustomersCount(),
+      this.getOrdersRevenue(whereClause),
+      this.getOrdersCount(whereClause),
+      this.customerService.getCustomersCount(whereClause),
     ]);
 
     return {
@@ -72,18 +90,18 @@ export class OrdersService extends CrudService<
     });
   }
 
-  async getOrdersCount() {
+  async getOrdersCount(where: Record<any, any>) {
     const agg = await this.aggregate({
-      where: {},
+      where,
       _count: true,
     });
 
     return (agg as { _count: number })._count;
   }
 
-  async getOrdersRevenue() {
+  async getOrdersRevenue(where: Record<any, any>) {
     let orders = await this.findMany({
-      where: {},
+      where,
       select: { product: { select: { price: true } } },
     });
 
@@ -144,5 +162,13 @@ export class OrdersService extends CrudService<
         await this.createOrder(order);
       }
     });
+  }
+
+  async getDateRange(period: Period) {
+    const range = AppUtilities.generateDateRange(period);
+    return {
+      startDate: range[DateRangeMap[period].startDate],
+      endDate: range[DateRangeMap[period].endDate],
+    };
   }
 }

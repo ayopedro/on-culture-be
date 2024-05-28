@@ -45,8 +45,10 @@ export class CustomersService extends CrudService<
     return await this.findManyPaginate({});
   }
 
-  async getCustomersCount() {
-    return await this.count({});
+  async getCustomersCount(where: Record<any, any>) {
+    return await this.count({
+      where,
+    });
   }
 
   async getCustomer(id: string) {

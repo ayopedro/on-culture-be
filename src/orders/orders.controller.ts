@@ -6,6 +6,7 @@ import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
 import { ApiResponseMeta } from '@@/common/decorators/response.decorator';
 import { JwtGuard } from '@@/common/guard/auth.guard';
 import { GetOrdersFilterDto } from './dto/get-orders.dto';
+import { DateFilterDto } from './dto/date-filter.dto';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -22,8 +23,8 @@ export class OrdersController {
   @Get('summary')
   @ApiBearerAuth()
   @UseGuards(JwtGuard)
-  async getSummary() {
-    return this.orderService.getSummary();
+  async getSummary(@Query() query: DateFilterDto) {
+    return this.orderService.getSummary(query);
   }
 
   @Post()
