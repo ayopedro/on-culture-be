@@ -11,6 +11,7 @@ import { BulkUploadOrders } from './dto/bulk-upload-order.dto';
 import { CrudService } from '@@/common/database/crud.service';
 import { OrderMaptype } from './orders.maptype';
 import { Prisma } from '@prisma/client';
+import { GetOrdersFilterDto } from './dto/get-orders.dto';
 
 @Injectable()
 export class OrdersService extends CrudService<
@@ -27,7 +28,7 @@ export class OrdersService extends CrudService<
 
   async getSummary() {
     const [totalRevenue, totalOrders, uniqueCustomers] = await Promise.all([
-      this.productService.getAllProductsSum(),
+      this.getOrdersRevenue(),
       this.getOrdersCount(),
       this.customerService.getCustomersCount(),
     ]);
@@ -39,9 +40,34 @@ export class OrdersService extends CrudService<
     };
   }
 
-  async getOrders() {
+  async getOrders(dto: GetOrdersFilterDto) {
+    const parseSplittedTermsQuery = (term: string) => {
+      return {
+        OR: [
+          {
+            product: {
+              name: { contains: term, mode: 'insensitive' },
+            },
+          },
+          {
+            customer: {
+              name: { contains: term, mode: 'insensitive' },
+            },
+          },
+        ],
+      };
+    };
+
+    const parsedQueryFilters = this.parseQueryFilter(dto, [
+      'product.category|equals',
+      {
+        key: 'term',
+        where: parseSplittedTermsQuery,
+      },
+    ]);
+
     return await this.findManyPaginate({
-      where: {},
+      where: parsedQueryFilters,
       include: { customer: true, product: true },
     });
   }
@@ -53,6 +79,20 @@ export class OrdersService extends CrudService<
     });
 
     return (agg as { _count: number })._count;
+  }
+
+  async getOrdersRevenue() {
+    let orders = await this.findMany({
+      where: {},
+      select: { product: { select: { price: true } } },
+    });
+
+    orders = orders.map((order) => order.product);
+
+    return orders.reduce((acc, item) => {
+      acc += item.price;
+      return acc;
+    }, 0);
   }
 
   async getOrder(id: string) {
@@ -84,11 +124,10 @@ export class OrdersService extends CrudService<
       try {
         await prisma.order.create({
           data: {
-            orderNumber: dto.order_number,
             customer: { connect: { id: customer.id } },
             product: { connect: { id: product.id } },
             ...(dto.order_date && {
-              createdAt: new Date(dto.order_date),
+              date: dto.order_date,
             }),
             createdBy: customer.id,
           },

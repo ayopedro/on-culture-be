@@ -17,16 +17,16 @@ export class ProductsService extends CrudService<
 
   async createProduct(dto: CreateProductDto) {
     let product;
-    const product_code = AppUtilities.generateProductCode(dto.name);
+    const code = AppUtilities.generateProductCode(dto.name);
 
     try {
       const existingProduct = await this.findFirst({
-        where: { product_code },
+        where: { code },
       });
 
       if (!existingProduct) {
         product = await this.create({
-          data: { product_code, ...dto },
+          data: { code, ...dto },
         });
       } else {
         product = existingProduct;
@@ -36,13 +36,5 @@ export class ProductsService extends CrudService<
     }
 
     return product;
-  }
-
-  async getAllProductsSum() {
-    const agg = (await this.aggregate({
-      _sum: { price: true },
-    })) as { _sum: { price: number } };
-
-    return agg._sum.price || 0;
   }
 }

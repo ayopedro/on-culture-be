@@ -1,6 +1,6 @@
 import { ProductCategory } from '@@/common/interfaces';
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   IsDate,
   IsEmail,
@@ -8,13 +8,11 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  matches,
 } from 'class-validator';
+import * as moment from 'moment';
 
 export class CreateOrderDto {
-  @IsNumber()
-  @ApiProperty()
-  order_number: number;
-
   @IsString()
   @ApiProperty()
   customer_name: string;
@@ -35,9 +33,15 @@ export class CreateOrderDto {
   @ApiProperty()
   price: number;
 
-  @IsDate()
+  @Transform(({ value }) => {
+    const dayFirstMatch = matches(
+      value,
+      /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
+    );
+    return !dayFirstMatch ? value : moment(value, 'DD/MM/YYYY').toDate();
+  })
   @ApiProperty()
-  @Type(() => Date)
   @IsOptional()
+  @IsDate()
   order_date?: string;
 }
