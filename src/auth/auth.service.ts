@@ -117,10 +117,11 @@ export class AuthService {
       email,
     };
 
-    const secret = this.config.get('JWT_SECRET');
+    const secret = this.config.get('jwt.secret');
+    const expiresIn = this.config.get('jwt.signOptions.expiresIn');
 
     const options = {
-      expiresIn: '1h',
+      expiresIn,
       secret,
     };
 
