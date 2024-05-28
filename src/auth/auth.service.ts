@@ -14,6 +14,8 @@ import { SigninUserDto } from './dto/sign-in-user.dto';
 import { User } from '@prisma/client';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ResetDto } from './dto/reset-password.dto';
+import { AppUtilities } from '@@/common/utilities';
+import { SensitiveUserInfo } from '@@/common/constant';
 
 @Injectable()
 export class AuthService {
@@ -34,9 +36,8 @@ export class AuthService {
           lastName,
         },
       });
-      delete user.password;
 
-      return { message: 'Registration Successful', user };
+      return AppUtilities.removeSensitiveData(user, SensitiveUserInfo);
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ForbiddenException('Email address already exists');
@@ -47,7 +48,7 @@ export class AuthService {
   }
 
   async loginUser({ email, password }: SigninUserDto) {
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: {
         email,
       },
@@ -61,7 +62,7 @@ export class AuthService {
     if (!matchedPW)
       throw new UnauthorizedException('Incorrect Email or Password');
 
-    delete user.password;
+    user = AppUtilities.removeSensitiveData(user, SensitiveUserInfo);
 
     const accessToken = await this.generateAccessToken(user.id, user.email);
 
@@ -86,8 +87,7 @@ export class AuthService {
       data: { password: hash },
     });
 
-    delete user.password;
-    return { message: 'Password changed successfully!', user };
+    return AppUtilities.removeSensitiveData(user, SensitiveUserInfo);
   }
 
   async resetPassword({ email, token, newPassword }: ResetDto) {

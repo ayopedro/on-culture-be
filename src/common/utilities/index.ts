@@ -123,4 +123,32 @@ export class AppUtilities {
 
     return errorData;
   };
+
+  public static removeSensitiveData(data: any, deleteKeys: any, remove = true) {
+    if (typeof data != 'object') return;
+    if (!data) return;
+
+    for (const key in data) {
+      if (deleteKeys.includes(key)) {
+        remove ? delete data[key] : (data[key] = '******************');
+      } else {
+        AppUtilities.removeSensitiveData(data[key], deleteKeys);
+      }
+    }
+    return data;
+  }
+
+  public static encode(
+    data: string,
+    encoding: BufferEncoding = 'base64',
+  ): string {
+    return Buffer.from(data).toString(encoding);
+  }
+
+  public static decode(
+    data: string,
+    encoding: BufferEncoding = 'base64',
+  ): string {
+    return Buffer.from(data, encoding).toString();
+  }
 }
