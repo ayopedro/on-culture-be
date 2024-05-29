@@ -1,7 +1,6 @@
 import { ProductCategory } from '@@/common/interfaces';
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsDate,
   IsEmail,
   IsEnum,
   IsNumber,
@@ -32,6 +31,5 @@ export class CreateOrderDto {
 
   @ApiProperty()
   @IsOptional()
-  @IsDate()
   order_date?: string;
 }

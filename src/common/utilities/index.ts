@@ -28,7 +28,7 @@ export class AppUtilities {
 
   public static generateDateRange(period: Period) {
     const duration = moment.duration(period).asMonths();
-    const previousDuration = moment().subtract(duration);
+    const previousDuration = moment().subtract(duration, 'month');
 
     const monthStart = previousDuration.startOf('month').toISOString();
     const monthEnd = previousDuration.endOf('month').toISOString();
@@ -84,6 +84,12 @@ export class AppUtilities {
     }
 
     return result;
+  }
+
+  public static calculatePeriodDiff(curr: number, prev: number = 0) {
+    const calculation = prev ? ((curr - prev) / prev) * 100 : 100;
+    if (curr === 0) return 0;
+    return calculation;
   }
 
   public static handleException(error: any): Error {

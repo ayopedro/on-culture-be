@@ -37,6 +37,11 @@ export class OrdersController {
     return this.orderService.createOrder(dto);
   }
 
+  @Get('revenue')
+  async getRevenueBreakdown(@Query() query: DateFilterDto) {
+    return this.orderService.getRevenueBreakdown(query);
+  }
+
   @Post('bulk-upload')
   @ApiBearerAuth()
   @UseGuards(JwtGuard)

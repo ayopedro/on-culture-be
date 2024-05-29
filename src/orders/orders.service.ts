@@ -55,8 +55,8 @@ export class OrdersService extends CrudService<
 
     const [totalRevenue, totalOrders, uniqueCustomers] = await Promise.all([
       this.getOrdersRevenue(whereClause, previous),
-      this.getOrdersCount(whereClause),
-      this.customerService.getCustomersCount(duration),
+      this.getOrdersCount(whereClause, previous),
+      this.customerService.getCustomersCount(duration, previous),
     ]);
 
     return {
@@ -113,34 +113,62 @@ export class OrdersService extends CrudService<
     });
   }
 
-  async getOrdersCount(where: Record<any, any>) {
-    const agg = await this.aggregate({
+  async getOrdersCount(where: Record<any, any>, previous?: PreviousDataDate) {
+    const currAgg = await this.aggregate({
       where,
       _count: true,
     });
 
-    return (agg as { _count: number })._count;
+    let prevAgg = {};
+
+    if (previous?.startDate)
+      prevAgg = await this.aggregate({
+        where: {
+          AND: [
+            {
+              date: { gte: previous.startDate },
+            },
+            {
+              date: { lte: previous.endDate },
+            },
+          ],
+        },
+        _count: true,
+      });
+
+    const currCount = (currAgg as any)._count;
+    const prevCount = (prevAgg as any)._count || 0;
+
+    const difference = AppUtilities.calculatePeriodDiff(currCount, prevCount);
+
+    return {
+      current: currCount,
+      difference,
+    };
   }
 
-  async getOrdersRevenue(where: Record<any, any>, previous: PreviousDataDate) {
+  async getOrdersRevenue(where: Record<any, any>, previous?: PreviousDataDate) {
     let currentOrders = await this.findMany({
       where,
       select: { product: { select: { price: true } } },
     });
 
-    let previousOrders = await this.findMany({
-      where: {
-        AND: [
-          {
-            date: { gte: previous.startDate },
-          },
-          {
-            date: { lte: previous.endDate },
-          },
-        ],
-      },
-      select: { product: { select: { price: true } } },
-    });
+    let previousOrders = [];
+
+    if (previous?.startDate)
+      previousOrders = await this.findMany({
+        where: {
+          AND: [
+            {
+              date: { gte: previous.startDate },
+            },
+            {
+              date: { lte: previous.endDate },
+            },
+          ],
+        },
+        select: { product: { select: { price: true } } },
+      });
 
     currentOrders = currentOrders.map((order) => order.product);
     previousOrders = previousOrders.map((order) => order.product);
@@ -155,18 +183,52 @@ export class OrdersService extends CrudService<
       0,
     );
 
-    let difference = 0;
-
-    if (previousOrdersCount !== 0) {
-      difference =
-        ((currentOrdersCount - previousOrdersCount) / previousOrdersCount) *
-        100;
-    }
+    const difference = AppUtilities.calculatePeriodDiff(
+      currentOrdersCount,
+      previousOrdersCount,
+    );
 
     return {
       current: currentOrdersCount,
       difference,
     };
+  }
+
+  async getRevenueBreakdown(dto: DateFilterDto) {
+    const duration = await this.getDateRange(dto.period);
+
+    const whereClause = Object.keys(duration || {}).length
+      ? {
+          AND: [
+            {
+              date: { gte: duration.startDate },
+            },
+            {
+              date: { lte: duration.endDate },
+            },
+          ],
+        }
+      : {};
+    try {
+      const revenueData = await this.findMany({
+        where: whereClause,
+        select: {
+          product: {
+            select: { price: true },
+          },
+          date: true,
+        },
+        orderBy: { date: 'asc' },
+      });
+
+      return revenueData.reduce((acc, item) => {
+        const obj = { price: item.product.price, date: item.date };
+        acc.push(obj);
+        return acc;
+      }, []);
+    } catch (error) {
+      throw new BadRequestException('Something went wrong');
+    }
   }
 
   async getOrder(id: string) {

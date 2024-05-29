@@ -8,6 +8,8 @@ import { CreateCustomerDto } from './dto/create-customer.dto';
 import { PrismaService } from '@@/common/database/prisma/prisma.service';
 import { CustomerMaptype } from './customer.maptype';
 import { CrudService } from '@@/common/database/crud.service';
+import { AppUtilities } from '@@/common/utilities';
+import { PreviousDataDate } from '@@/common/interfaces';
 
 @Injectable()
 export class CustomersService extends CrudService<
@@ -45,8 +47,11 @@ export class CustomersService extends CrudService<
     return await this.findManyPaginate({});
   }
 
-  async getCustomersCount(duration: Record<any, any>) {
-    return await this.count({
+  async getCustomersCount(
+    duration: Record<any, any>,
+    previousData?: PreviousDataDate,
+  ) {
+    const current = await this.count({
       where: {
         orders: {
           some: {
@@ -58,6 +63,29 @@ export class CustomersService extends CrudService<
         },
       },
     });
+
+    let previous = 0;
+
+    if (previousData?.startDate)
+      previous = await this.count({
+        where: {
+          orders: {
+            some: {
+              AND: [
+                { date: { gte: previousData?.startDate } },
+                { date: { lte: previousData?.endDate } },
+              ],
+            },
+          },
+        },
+      });
+
+    const difference = AppUtilities.calculatePeriodDiff(current, previous);
+
+    return {
+      current,
+      difference,
+    };
   }
 
   async getCustomer(id: string) {
