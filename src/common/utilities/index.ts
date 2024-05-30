@@ -23,12 +23,12 @@ export class AppUtilities {
       date,
       /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/,
     );
-    return !dayFirstMatch ? date : moment(date, 'DD/MM/YYYY').toDate();
+    return !dayFirstMatch ? date : moment(date, 'DD/MM/YYYY').utc().toDate();
   }
 
   public static generateDateRange(period: Period) {
     const duration = moment.duration(period).asMonths();
-    const previousDuration = moment().subtract(duration, 'month');
+    const previousDuration = moment().utc().subtract(duration, 'month');
 
     const monthStart = previousDuration.startOf('month').toISOString();
     const monthEnd = previousDuration.endOf('month').toISOString();
@@ -39,23 +39,27 @@ export class AppUtilities {
 
     if (period === Period.THIS_YEAR || period === Period.THIS_MONTH) {
       result = {
-        monthStart: moment().startOf('month').toISOString(),
-        monthEnd: moment().endOf('month').toISOString(),
-        yearStart: moment().startOf('year').toISOString(),
-        yearEnd: moment().endOf('year').toISOString(),
+        monthStart: moment().utc().startOf('month').toISOString(),
+        monthEnd: moment().utc().endOf('month').toISOString(),
+        yearStart: moment().utc().startOf('year').toISOString(),
+        yearEnd: moment().utc().endOf('year').toISOString(),
         previousMonthStart: moment()
+          .utc()
           .subtract(1, 'month')
           .startOf('month')
           .toISOString(),
         previousMonthEnd: moment()
+          .utc()
           .subtract(1, 'month')
           .endOf('month')
           .toISOString(),
         previousYearStart: moment()
+          .utc()
           .subtract(1, 'year')
           .startOf('year')
           .toISOString(),
         previousYearEnd: moment()
+          .utc()
           .subtract(1, 'year')
           .endOf('year')
           .toISOString(),
@@ -67,13 +71,16 @@ export class AppUtilities {
         yearStart,
         yearEnd,
         previousMonthStart: moment(monthStart)
+          .utc()
           .subtract(Number(duration), 'months')
           .toISOString(),
         previousMonthEnd: moment(monthEnd)
+          .utc()
           .endOf('month')
           .subtract(Number(duration), 'months')
           .toISOString(),
         previousYearStart: moment(yearStart)
+          .utc()
           .subtract(Number(duration), 'months')
           .toISOString(),
         previousYearEnd: previousDuration
