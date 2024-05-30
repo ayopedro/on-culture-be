@@ -20,6 +20,7 @@ const configuration = {
     },
   },
   redis: {
+    url: env('REDIS_URL'),
     host: env('REDIS_HOST', 'localhost'),
     port: parseInt(env('REDIS_PORT', '6379')),
     password: env('REDIS_PASSWORD'),

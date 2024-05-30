@@ -15,6 +15,7 @@ import { BullModule } from '@nestjs/bull';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         prefix: `${config.get('environment')}.${config.get('app.name')}`,
+        url: config.get('redis.url'),
         redis: config.get('redis'),
         defaultJobOptions: { removeOnComplete: true },
       }),
