@@ -231,6 +231,36 @@ export class OrdersService extends CrudService<
     }
   }
 
+  async getProductCategories(dto: DateFilterDto) {
+    const duration = await this.getDateRange(dto.period);
+
+    const whereClause = Object.keys(duration || {}).length
+      ? {
+          AND: [
+            {
+              date: { gte: duration.startDate },
+            },
+            {
+              date: { lte: duration.endDate },
+            },
+          ],
+        }
+      : {};
+    try {
+      const orders = await this.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+        },
+      });
+
+      return await this.productService.getProductCategoryData(orders);
+    } catch (error) {
+      console.error(error.message);
+      throw new BadRequestException('Something went wrong');
+    }
+  }
+
   async getOrder(id: string) {
     const order = await this.findFirst({
       where: { id },

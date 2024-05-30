@@ -37,4 +37,32 @@ export class ProductsService extends CrudService<
 
     return product;
   }
+
+  async getProductCategoryData(ordersId: Record<string, string>[]) {
+    const products = await this.findMany({
+      where: {
+        orders: {
+          some: {
+            id: {
+              in: ordersId.map(({ id }) => id),
+            },
+          },
+        },
+      },
+      select: {
+        category: true,
+      },
+    });
+
+    return products.reduce((acc, item) => {
+      const categoryObj = acc.find((obj) => obj.name === item.category);
+
+      if (categoryObj) {
+        categoryObj.count++;
+      } else {
+        acc.push({ name: item.category, count: 1 });
+      }
+      return acc;
+    }, []);
+  }
 }
