@@ -18,6 +18,7 @@ import { DateRangeMap } from '@@/common/constant';
 import { isEmail, isEnum, isNotEmpty, isNumber } from 'class-validator';
 import { PreviousDataDate, ProductCategory } from '@@/common/interfaces';
 import { OrderUploadReasons } from './interface';
+import * as moment from 'moment';
 
 @Injectable()
 export class OrdersService extends CrudService<
@@ -107,9 +108,16 @@ export class OrdersService extends CrudService<
       },
     ]);
 
-    return await this.findManyPaginate({
-      where: { ...whereClause, ...parsedQueryFilters },
+    const args: Prisma.OrderFindManyArgs = {
+      where: {
+        ...whereClause,
+        ...parsedQueryFilters,
+      },
       include: { customer: true, product: true },
+    };
+
+    return await this.findManyPaginate(args, {
+      ...dto,
     });
   }
 
@@ -290,8 +298,15 @@ export class OrdersService extends CrudService<
       const order_date = AppUtilities.parseDate(dto.order_date);
 
       try {
-        await prisma.order.create({
-          data: {
+        await prisma.order.upsert({
+          where: {
+            customerId_productId_date: {
+              customerId: customer.id,
+              productId: product.id,
+              date: order_date,
+            },
+          },
+          create: {
             customer: { connect: { id: customer.id } },
             product: { connect: { id: product.id } },
             ...(dto.order_date && {
@@ -299,6 +314,7 @@ export class OrdersService extends CrudService<
             }),
             createdBy: customer.id,
           },
+          update: {},
         });
       } catch (error) {
         throw new BadRequestException(error.message);
@@ -352,7 +368,10 @@ export class OrdersService extends CrudService<
             )
           : OrderUploadReasons.CUSTOMER_NAME_REASON;
       }
-      if (!isNotEmpty(order.order_date)) {
+      if (
+        !isNotEmpty(order.order_date) ||
+        !moment(order.order_date, 'DD/MM/YYYY').isValid()
+      ) {
         order['reason'] = order['reason']
           ? [order['reason'], OrderUploadReasons.ORDER_DATE_REASON].join(', ')
           : OrderUploadReasons.ORDER_DATE_REASON;

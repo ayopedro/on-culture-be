@@ -4,5 +4,5 @@ export enum OrderUploadReasons {
   PRODUCT_CATEGORY_REASON = 'Invalid product category',
   PRICE_REASON = 'Price is empty',
   CUSTOMER_EMAIL_REASON = 'Email address is invalid',
-  ORDER_DATE_REASON = 'Order date is empty',
+  ORDER_DATE_REASON = 'Order date is empty or invalid',
 }
