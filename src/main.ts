@@ -33,16 +33,20 @@ async function bootstrap() {
         target: false,
         value: false,
       },
-      exceptionFactory: (errors: ValidationError[] = []) =>
-        new BadRequestException(
-          errors.reduce(
-            (errObj, validationList) => ({
-              ...errObj,
-              [validationList.property]: validationList.constraints,
-            }),
-            {},
-          ),
-        ),
+      exceptionFactory: (errors: ValidationError[] = []) => {
+        const errorObj = errors.reduce((errObj, validationList) => {
+          return {
+            ...errObj,
+            [validationList.property]: Object.values(
+              validationList.constraints,
+            ),
+          };
+        }, {});
+        return new BadRequestException({
+          message: 'Validation Error',
+          errors: errorObj,
+        });
+      },
     }),
   );
 
